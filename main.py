@@ -25,4 +25,4 @@ class MyApp(App):
         pred = predict(value)
         self.result.text = f'Prediction: {pred}'
 
-MyApp().run()
+MyApp().run() 
