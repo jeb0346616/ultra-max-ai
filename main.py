@@ -1,28 +1,35 @@
-from kivy.app import App
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.textinput import TextInput
-from kivy.uix.label import Label
-from ai_model import predict
+name: Build APK
 
-class MyApp(App):
-    def build(self):
-        self.box = BoxLayout(orientation='vertical')
+on:
+  workflow_dispatch:
+  push:
 
-        self.input = TextInput(hint_text='Enter B/S sequence')
-        self.box.add_widget(self.input)
+jobs:
+  build:
+    runs-on: ubuntu-22.04
 
-        self.result = Label(text='Result')
-        self.box.add_widget(self.result)
+    steps:
+    - uses: actions/checkout@v3
 
-        btn = Label(text='(Type data, app will auto predict)')
-        self.box.add_widget(btn)
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-        self.input.bind(text=self.on_text)
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y openjdk-17-jdk zip unzip git
+        pip install --upgrade pip
+        pip install buildozer cython
 
-        return self.box
+    - name: Build APK
+      run: |
+        buildozer init || true
+        buildozer -v android debug || true
 
-    def on_text(self, instance, value):
-        pred = predict(value)
-        self.result.text = f'Prediction: {pred}'
-
-MyApp().run() 
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: apk
+        path: bin/*.apk
